@@ -1,0 +1,12 @@
+name: AgePredictor
+title: AgePredictor
+username: wlady
+account: wlady
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 16293670
+bundleId: 11308828
+url: https://wlady.shinyapps.io/AgePredictor/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

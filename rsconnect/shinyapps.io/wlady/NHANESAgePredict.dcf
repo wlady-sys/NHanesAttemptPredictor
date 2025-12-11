@@ -1,0 +1,10 @@
+name: NHANESAgePredict
+title:
+username: wlady
+account: wlady
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 16293817
+bundleId: 11308832
+url: https://wlady.shinyapps.io/NHANESAgePredict/
+version: 1

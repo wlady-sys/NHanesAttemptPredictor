@@ -1,0 +1,10 @@
+name: AgePredictor_renv
+title:
+username: wlady
+account: wlady
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 16293764
+bundleId: 11308781
+url: https://wlady.shinyapps.io/AgePredictor_renv/
+version: 1

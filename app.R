@@ -45,12 +45,6 @@ health_choices <- c(
   "Physically active (yes / no)"          = "PhysActive"
 )
 
-mental_choices <- c(
-  "Days mental health was bad (last 30 days)" = "DaysMentHlthBad",
-  "Little interest / pleasure score"          = "LittleInterest",
-  "Depressed / hopeless score"               = "Depressed"
-)
-
 
 
 ## -------------------------------------------------------------
@@ -65,7 +59,7 @@ ui <- fluidPage(
       h3("1. Choose predictors\nfor the model"),
       
       # Demography group ---------------------------------------
-      h4("Demography"),
+      h4("Demographc info"),
       actionButton("demo_toggle", "Toggle all demography"),
       checkboxGroupInput(
         "pred_demo",
@@ -85,16 +79,6 @@ ui <- fluidPage(
         selected = health_choices
       ),
       tags$hr(),
-      
-      # Mental health group ------------------------------------
-      h4("Mental health"),
-      actionButton("mental_toggle", "Toggle all mental health"),
-      checkboxGroupInput(
-        "pred_mental",
-        NULL,
-        choices  = mental_choices,
-        selected = mental_choices
-      ),
       
       tags$hr(),
       actionButton("update_model", "Update model"),
@@ -143,18 +127,6 @@ ui <- fluidPage(
       sliderInput("person_days_physbad",
                   "Days physical health was bad (last 30 days):",
                   min = 0, max = 30, value = 2),
-      
-      sliderInput("person_days_mentbad",
-                  "Days mental health was bad (last 30 days):",
-                  min = 0, max = 30, value = 2),
-      
-      sliderInput("person_littleinterest",
-                  "Little interest / pleasure score:",
-                  min = 0, max = 3, value = 1),
-      
-      sliderInput("person_depressed",
-                  "Depressed / hopeless score:",
-                  min = 0, max = 3, value = 1),
       
       selectInput("person_physactive", "Physically active (yes / no):",
                   choices = levels(comp1$PhysActive))
@@ -229,21 +201,10 @@ server <- function(input, output, session) {
     }
   })
   
-  observeEvent(input$mental_toggle, {
-    cur <- input$pred_mental
-    if (length(cur) == length(mental_choices)) {
-      updateCheckboxGroupInput(session, "pred_mental",
-                               selected = character(0))
-    } else {
-      updateCheckboxGroupInput(session, "pred_mental",
-                               selected = mental_choices)
-    }
-  })
-  
   ## ---- refit model when Update is clicked -------------------
   
   observeEvent(input$update_model, {
-    selected <- c(input$pred_demo, input$pred_health, input$pred_mental)
+    selected <- c(input$pred_demo, input$pred_health)
     
     if (length(selected) == 0) {
       showNotification("Please select at least one predictor.",
@@ -330,9 +291,6 @@ server <- function(input, output, session) {
       Diabetes         = factor(input$person_diabetes,
                                 levels = levels(comp1$Diabetes)),
       DaysPhysHlthBad  = input$person_days_physbad,
-      DaysMentHlthBad  = input$person_days_mentbad,
-      LittleInterest   = input$person_littleinterest,
-      Depressed        = input$person_depressed,
       PhysActive       = factor(input$person_physactive,
                                 levels = levels(comp1$PhysActive))
     )

@@ -10,7 +10,6 @@ library(Metrics)
 library(NHANES)
 library(naniar)
 
-
 # 2. Load precomputed data & models -----------------------------
 
 # These .rds files must be in the same folder as app.R
@@ -50,8 +49,6 @@ mental_choices <- c(
   "Little interest / pleasure score"          = "LittleInterest",
   "Depressed / hopeless score"               = "Depressed"
 )
-
-
 
 ## -------------------------------------------------------------
 ## UI
@@ -341,28 +338,61 @@ server <- function(input, output, session) {
   output$your_pred_age <- renderText({
     mod <- current_model()
     newdat <- your_person()
-    pred <- predict(mod, newdata = newdat)
+    
+    pred <- tryCatch(
+      as.numeric(predict(mod, newdata = newdat)),
+      error = function(e) NA_real_
+    )
+    
+    if (is.na(pred)) {
+      return("Prediction failed (model/newdata mismatch). Check the R console for details.")
+    }
+    
     paste0("Your predicted age is approximately ",
            round(pred, 1), " years.")
   })
   
   output$your_pred_drivers <- renderText({
-    mod <- current_model()
-    cf  <- coef(mod)
+    mod    <- current_model()
+    newdat <- your_person()
     
-    # drop intercept, sort
-    coefs <- cf[-1]
-    pos_sorted <- sort(coefs[coefs > 0], decreasing = TRUE)
-    neg_sorted <- sort(coefs[coefs < 0], decreasing = FALSE)
+    # Build model matrix for this person's inputs using the current model terms
+    X <- tryCatch(
+      model.matrix(delete.response(terms(mod)), newdat),
+      error = function(e) NULL
+    )
     
-    pos_names <- names(pos_sorted)[1:min(3, length(pos_sorted))]
-    neg_names <- names(neg_sorted)[1:min(3, length(neg_sorted))]
+    if (is.null(X)) {
+      return("Could not compute drivers for this model/newdata (see console).")
+    }
     
-    paste(
-      "Positive drivers (higher predicted age):",
-      if (length(pos_names) > 0) paste(pos_names, collapse = ", ") else "none",
-      "\nNegative drivers (lower predicted age):",
-      if (length(neg_names) > 0) paste(neg_names, collapse = ", ") else "none"
+    b <- coef(mod)
+    
+    # Align columns & coefficients (important if lm drops aliased terms)
+    common <- intersect(colnames(X), names(b))
+    if (length(common) == 0) {
+      return("No overlapping terms found to explain prediction.")
+    }
+    
+    contrib <- as.numeric(X[1, common] * b[common])
+    names(contrib) <- common
+    
+    # Drop intercept for 'drivers'
+    contrib <- contrib[names(contrib) != "(Intercept)"]
+    
+    pos <- sort(contrib[contrib > 0], decreasing = TRUE)
+    neg <- sort(contrib[contrib < 0], decreasing = FALSE)
+    
+    pos_show <- head(pos, 5)
+    neg_show <- head(neg, 5)
+    
+    fmt <- function(x) paste(sprintf("  %s: %+0.2f", names(x), x), collapse = "\n")
+    
+    paste0(
+      "Top positive contributions (push predicted age UP):\n",
+      if (length(pos_show)) fmt(pos_show) else "  none",
+      "\n\nTop negative contributions (push predicted age DOWN):\n",
+      if (length(neg_show)) fmt(neg_show) else "  none"
     )
   })
   

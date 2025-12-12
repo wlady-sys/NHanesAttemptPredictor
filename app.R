@@ -45,12 +45,6 @@ health_choices <- c(
   "Physically active (yes / no)"          = "PhysActive"
 )
 
-mental_choices <- c(
-  "Days mental health was bad (last 30 days)" = "DaysMentHlthBad",
-  "Little interest / pleasure score"          = "LittleInterest",
-  "Depressed / hopeless score"               = "Depressed"
-)
-
 
 
 ## -------------------------------------------------------------
@@ -59,138 +53,112 @@ mental_choices <- c(
 
 ui <- fluidPage(
   titlePanel("NHANES Age Prediction Model"),
-  sidebarLayout(
-    sidebarPanel(
-      width = 3,
-      h3("1. Choose predictors\nfor the model"),
-      
-      # Demography group ---------------------------------------
-      h4("Demography"),
-      actionButton("demo_toggle", "Toggle all demography"),
-      checkboxGroupInput(
-        "pred_demo",
-        "Include these predictors:",
-        choices  = demography_choices,
-        selected = demography_choices
+  tabsetPanel(
+    tabPanel(
+    "Model results",
+    sidebarLayout(
+      sidebarPanel(
+        width = 3,
+        h3("Choose predictors"),
+
+        h4("Demographic"),
+        actionButton("demo_toggle", "Toggle all"),
+        checkboxGroupInput("pred_demo", NULL,
+                           choices = demography_choices,
+                           selected = demography_choices),
+        tags$hr(),
+
+        h4("Health"),
+        actionButton("health_toggle", "Toggle all"),
+        checkboxGroupInput("pred_health", NULL,
+                           choices = health_choices,
+                           selected = health_choices),
+        tags$hr(),
+
+        actionButton("update_model", "Update Model")
       ),
-      tags$hr(),
-      
-      # Health group -------------------------------------------
-      h4("Health"),
-      actionButton("health_toggle", "Toggle all health"),
-      checkboxGroupInput(
-        "pred_health",
-        NULL,
-        choices  = health_choices,
-        selected = health_choices
-      ),
-      tags$hr(),
-      
-      # Mental health group ------------------------------------
-      h4("Mental health"),
-      actionButton("mental_toggle", "Toggle all mental health"),
-      checkboxGroupInput(
-        "pred_mental",
-        NULL,
-        choices  = mental_choices,
-        selected = mental_choices
-      ),
-      
-      tags$hr(),
-      actionButton("update_model", "Update model"),
-      
-      tags$hr(),
-      h3("2. Predict age for\na specific person"),
-      
-      selectInput("person_edu", "Education:",
-                  choices = levels(comp1$Education),
-                  selected = "Some College"),
-      
-      selectInput("person_marital", "Marital status:",
-                  choices = levels(comp1$MaritalStatus),
-                  selected = "NeverMarried"),
-      
-      sliderInput("person_income", "Household income (midpoint, dollars):",
-                  min = 2500, max = 100000, value = 47500, step = 2500),
-      
-      sliderInput("person_poverty", "Poverty ratio:",
-                  min = 0, max = 5, value = 2.5, step = 0.1),
-      
-      selectInput("person_home", "Housing:",
-                  choices = levels(comp1$HomeOwn)),
-      
-      selectInput("person_work", "Work status:",
-                  choices = levels(comp1$Work)),
-      
-      sliderInput("person_pulse", "Resting pulse (beats per minute):",
-                  min = 40, max = 140, value = 72),
-      
-      sliderInput("person_sys", "Average systolic BP:",
-                  min = 70, max = 220, value = 115),
-      
-      sliderInput("person_dia", "Average diastolic BP:",
-                  min = 40, max = 120, value = 69),
-      
-      sliderInput("person_directchol", "Direct cholesterol (mmol/L):",
-                  min = 0.3, max = 13, value = 4.8, step = 0.1),
-      
-      sliderInput("person_totchol", "Total cholesterol (mmol/L):",
-                  min = 1.3, max = 13.5, value = 4.8, step = 0.1),
-      
-      selectInput("person_diabetes", "Diabetes:",
-                  choices = levels(comp1$Diabetes)),
-      
-      sliderInput("person_days_physbad",
-                  "Days physical health was bad (last 30 days):",
-                  min = 0, max = 30, value = 2),
-      
-      sliderInput("person_days_mentbad",
-                  "Days mental health was bad (last 30 days):",
-                  min = 0, max = 30, value = 2),
-      
-      sliderInput("person_littleinterest",
-                  "Little interest / pleasure score:",
-                  min = 0, max = 3, value = 1),
-      
-      sliderInput("person_depressed",
-                  "Depressed / hopeless score:",
-                  min = 0, max = 3, value = 1),
-      
-      selectInput("person_physactive", "Physically active (yes / no):",
-                  choices = levels(comp1$PhysActive))
-    ),
-    
-    mainPanel(
-      tabsetPanel(
-        tabPanel(
-          "Model results",
-          h3("Model fit statistics"),
-          tableOutput("model_fit"),
-          tags$br(),
-          h3("Regression coefficients"),
-          tableOutput("coef_table"),
-          tags$br(),
-          h3("Plot 1: Predicted vs actual age"),
-          plotOutput("plot_pred_actual", height = "450px")
-        ),
+
+      mainPanel(
+        h3("Model fit statistics"),
+        tableOutput("model_fit"),
+        tags$br(),
+        h3("Regression coefficients"),
+        tableOutput("coef_table"),
+        tags$br(),
+        h3("Predicted vs actual age"),
+        plotOutput("plot_pred_actual", height = "450px")
         
-        tabPanel(
-          "Your age prediction",
-          h3("Predicted age based on your inputs"),
-          verbatimTextOutput("your_pred_age"),
-          tags$br(),
-          h4("What seems to drive this prediction?"),
-          verbatimTextOutput("your_pred_drivers")
-        ),
-        
-        tabPanel(
-          "Random people comparison",
-          h3("Compare with random NHANES participants"),
-          numericInput("n_random", "How many random people to sample?",
-                       value = 10, min = 1, max = 100),
-          actionButton("draw_random", "Draw random sample"),
-          tableOutput("random_table")
-        )
+      )
+    )
+  ),
+
+
+
+  # Age Prediction Tab (Sidebar: inputs for a single person)
+  tabPanel(
+    "Your age prediction",
+    sidebarLayout(
+      sidebarPanel(
+        width = 3,
+        h3("Enter your information"),
+
+        selectInput("person_edu", "Education:",
+                    choices = levels(comp1$Education)),
+        selectInput("person_marital", "Marital status:",
+                    choices = levels(comp1$MaritalStatus)),
+        sliderInput("person_income", "Household income:",
+                    min = 2500, max = 100000, value = 47500, step = 2500),
+        sliderInput("person_poverty", "Poverty ratio:",
+                    min = 0, max = 5, value = 2.5),
+        selectInput("person_home", "Housing:",
+                    choices = levels(comp1$HomeOwn)),
+        selectInput("person_work", "Work status:",
+                    choices = levels(comp1$Work)),
+        sliderInput("person_pulse", "Resting pulse:",
+                    min = 40, max = 140, value = 72),
+        sliderInput("person_sys", "Systolic BP:",
+                    min = 70, max = 220, value = 115),
+        sliderInput("person_dia", "Diastolic BP:",
+                    min = 40, max = 120, value = 69),
+
+        sliderInput("person_directchol", "Direct cholesterol:",
+                    min = 0.3, max = 13, value = 4.8, step = 0.1),
+        sliderInput("person_totchol", "Total cholesterol:",
+                    min = 1.3, max = 13.5, value = 4.8, step = 0.1),
+
+        selectInput("person_diabetes", "Diabetes:",
+                    choices = levels(comp1$Diabetes)),
+        sliderInput("person_days_physbad", "Bad physical days:",
+                    min = 0, max = 30, value = 2),
+  
+        selectInput("person_physactive", "Physically active:",
+                    choices = levels(comp1$PhysActive))
+      ),
+
+      mainPanel(
+        h3("Predicted age based on your inputs"),
+        verbatimTextOutput("your_pred_age"),
+        tags$br(),
+        h4("Key drivers of prediction"),
+        verbatimTextOutput("your_pred_drivers")
+      )
+    )
+  ),
+
+
+  # Random Comparison Tab (Sidebar: sampling controls)
+  tabPanel(
+    "Random people comparison",
+    sidebarLayout(
+      sidebarPanel(
+        width = 3,
+        numericInput("n_random", "How many random people?",
+                     value = 10, min = 1, max = 100),
+        actionButton("draw_random", "Draw random sample")
+      ),
+
+      mainPanel(
+        tableOutput("random_table")
       )
     )
   )
@@ -229,21 +197,10 @@ server <- function(input, output, session) {
     }
   })
   
-  observeEvent(input$mental_toggle, {
-    cur <- input$pred_mental
-    if (length(cur) == length(mental_choices)) {
-      updateCheckboxGroupInput(session, "pred_mental",
-                               selected = character(0))
-    } else {
-      updateCheckboxGroupInput(session, "pred_mental",
-                               selected = mental_choices)
-    }
-  })
-  
   ## ---- refit model when Update is clicked -------------------
   
   observeEvent(input$update_model, {
-    selected <- c(input$pred_demo, input$pred_health, input$pred_mental)
+    selected <- c(input$pred_demo, input$pred_health)
     
     if (length(selected) == 0) {
       showNotification("Please select at least one predictor.",
@@ -330,9 +287,6 @@ server <- function(input, output, session) {
       Diabetes         = factor(input$person_diabetes,
                                 levels = levels(comp1$Diabetes)),
       DaysPhysHlthBad  = input$person_days_physbad,
-      DaysMentHlthBad  = input$person_days_mentbad,
-      LittleInterest   = input$person_littleinterest,
-      Depressed        = input$person_depressed,
       PhysActive       = factor(input$person_physactive,
                                 levels = levels(comp1$PhysActive))
     )
@@ -351,9 +305,11 @@ server <- function(input, output, session) {
     cf  <- coef(mod)
     
     # drop intercept, sort
-    coefs <- cf[-1]
-    pos_sorted <- sort(coefs[coefs > 0], decreasing = TRUE)
-    neg_sorted <- sort(coefs[coefs < 0], decreasing = FALSE)
+    inputs <- your_person()
+    effects <- cf[-1] * as.numeric(inputs)
+
+    pos_sorted <- sort(effects[effects > 0], decreasing = TRUE)
+    neg_sorted <- sort(effects[effects < 0], decreasing = FALSE)
     
     pos_names <- names(pos_sorted)[1:min(3, length(pos_sorted))]
     neg_names <- names(neg_sorted)[1:min(3, length(neg_sorted))]
